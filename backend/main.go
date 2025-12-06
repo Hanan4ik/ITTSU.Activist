@@ -2,6 +2,7 @@ package main
 
 import (
 	"activist/access"
+	"activist/comments"
 	"activist/cookie"
 	crypto_back "activist/crypto"
 	"activist/events"
@@ -17,7 +18,7 @@ import (
 	_ "github.com/tursodatabase/turso-go"
 )
 
-func startAPI(lapi login.LoginAPI, rapi *register.RegAPI, eapi *events.EventAPI) {
+func startAPI(lapi login.LoginAPI, rapi *register.RegAPI, eapi *events.EventAPI, capi *comments.CommentsAPI) {
 	gin.SetMode(gin.DebugMode)
 	router := gin.Default()
 	config := cors.DefaultConfig()
@@ -34,6 +35,9 @@ func startAPI(lapi login.LoginAPI, rapi *register.RegAPI, eapi *events.EventAPI)
 	router.POST("/api/events/createEvent", eapi.CreateEvent)
 	router.POST("/api/events/removeEvent", eapi.RemoveEvent)
 	router.POST("/api/events/updateEvent", eapi.UpdateEvent)
+	router.POST("/api/comments/get", capi.GetComments)
+	router.POST("/api/comments/create", capi.AddComment)
+	router.POST("/api/comments/remove", capi.RemoveComment)
 	router.Run("localhost:8000")
 }
 
@@ -71,8 +75,14 @@ func main() {
 	accesDB.AddRight(1, 2)
 	accesDB.AddRight(2, 1)
 	err = regDB.QueueAppend("pidorok", "2", "b@b", "password", 0)
+	cdb, _ := comments.NewCommentDB("comments.sqlite")
+	cdb.Init()
+	cdb.NewComment(comments.Comment{Text: "Privet mir", PostID: 3, UserID: 1})
+	cdb.NewComment(comments.Comment{Text: "Privet mir", PostID: 3, UserID: 1})
+	capi := comments.NewCommentsAPI(&cdb, &accesDB, &cookie)
+	fmt.Println(cdb.GetComment(1))
 	if err != nil {
 		fmt.Print(err.Error())
 	}
-	startAPI(loginAPI, &registerAPI, &eventAPI)
+	startAPI(loginAPI, &registerAPI, &eventAPI, &capi)
 }
