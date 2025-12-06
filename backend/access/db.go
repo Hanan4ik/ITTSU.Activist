@@ -9,6 +9,10 @@ type AcessDB struct {
 	db *sql.DB
 }
 
+func NewAcessDB(db *sql.DB) AcessDB {
+	return AcessDB{db}
+}
+
 func (adb *AcessDB) InitDB() {
 	scheme := `
 	CREATE TABLE rights(
@@ -20,6 +24,7 @@ func (adb *AcessDB) InitDB() {
 }
 
 func (adb *AcessDB) AddRight(userID, rights int64) {
+	adb.db.Exec("INSERT INTO rights VALUES(?,?)", userID, rights)
 }
 
 func (adb *AcessDB) IsStudent(userID int64) bool {

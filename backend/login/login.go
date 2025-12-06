@@ -26,14 +26,17 @@ func (ldb *LoginDB) Init() { // username, email, password_salt, password_hash, 2
 	ldb.Database.Exec(loginTableScheme)
 }
 
-func (ldb *LoginDB) AddCreds(username, email, password_salt, password_hash string) error {
-	_, err := ldb.Database.Exec("INSERT INTO creds (username, email, password_salt, password_hash) VALUES (?,?,?,?)", username, email, password_salt, password_hash)
-	return err
+func (ldb *LoginDB) AddCreds(username, table_number, email, password_salt, password_hash string) (int64, error) {
+	res, err := ldb.Database.Exec("INSERT INTO creds (username, tabel_number, email, password_salt, password_hash) VALUES (?,?,?,?,?)", username, table_number, email, password_salt, password_hash)
+	if err != nil {
+		return -1, err
+	}
+	id, err := res.LastInsertId()
+	return id, err
 }
 
 // VerifyUsername Verifies that password match username. Return {user_id, nil} if match and {-1, error} if otherwise
 func (ldb *LoginDB) VerifyTableNumber(tabel_number string, password string) (int64, error) {
-
 	res, err := ldb.Database.Query("SELECT id, password_salt, password_hash FROM creds WHERE tabel_number = ?", tabel_number)
 	if err != nil {
 		return -1, err
