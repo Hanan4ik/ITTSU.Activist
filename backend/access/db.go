@@ -29,7 +29,7 @@ func (adb *AcessDB) AddRight(userID, rights int64) {
 
 func (adb *AcessDB) IsStudent(userID int64) bool {
 	rights, err := adb.GetUserRight(userID)
-	if rights == constants.STUDENT && err == nil {
+	if rights >= constants.STUDENT && err == nil {
 		return true
 	}
 	return false
@@ -37,7 +37,7 @@ func (adb *AcessDB) IsStudent(userID int64) bool {
 
 func (adb *AcessDB) IsOrganisator(userID int64) bool {
 	rights, err := adb.GetUserRight(userID)
-	if rights == constants.ORGANISATOR && err == nil {
+	if rights >= constants.ORGANISATOR && err == nil {
 		return true
 	}
 	return false
@@ -45,7 +45,7 @@ func (adb *AcessDB) IsOrganisator(userID int64) bool {
 
 func (adb *AcessDB) IsAdmin(userID int64) bool {
 	rights, err := adb.GetUserRight(userID)
-	if rights == constants.ADMIN && err == nil {
+	if rights >= constants.ADMIN && err == nil {
 		return true
 	}
 	return false
