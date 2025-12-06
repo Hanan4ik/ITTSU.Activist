@@ -15,8 +15,8 @@ type LoginAPI struct {
 }
 
 type LoginInput struct {
-	Cred     string
-	Password string
+	Cred     string `json:"login"`
+	Password string `json:"password"`
 }
 
 func isEmail(cred string) bool {
@@ -26,10 +26,12 @@ func isEmail(cred string) bool {
 func (lapi LoginAPI) Login(c *gin.Context) { // /api/login endpoint
 	var input LoginInput
 	c.BindJSON(&input)
+	fmt.Println(input)
 	cred := input.Cred
 	password := input.Password
 	var id int64
 	var err error
+	fmt.Println(cred)
 	if isEmail(cred) {
 		id, err = lapi.Ldb.VerifyEmail(cred, password)
 	} else {
@@ -46,7 +48,7 @@ func (lapi LoginAPI) Login(c *gin.Context) { // /api/login endpoint
 		fmt.Print(err.Error())
 		return
 	}
-	c.Header("Set-Cookie", fmt.Sprintf("session=%s; Path=/; Domain=127.0.0.1; Max-Age=86400; Secure; HttpOnly; SameSite=None; Partitioned", cook)) //
+	c.Header("Set-Cookie", fmt.Sprintf("session=%s; Path=/; Domain=localhost; Max-Age=86400; Secure; HttpOnly; SameSite=None; Partitioned", cook)) //
 	c.JSON(http.StatusOK, gin.H{"OK": "OK"})
 }
 

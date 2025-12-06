@@ -4,6 +4,7 @@ import (
 	"activist/access"
 	"activist/cookie"
 	crypto_back "activist/crypto"
+	"activist/events"
 	"activist/login"
 	"activist/register"
 	"crypto/rand"
@@ -16,11 +17,11 @@ import (
 	_ "github.com/tursodatabase/turso-go"
 )
 
-func startAPI(lapi login.LoginAPI, rapi *register.RegAPI) {
+func startAPI(lapi login.LoginAPI, rapi *register.RegAPI, eapi *events.EventAPI) {
 	gin.SetMode(gin.DebugMode)
 	router := gin.Default()
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://127.0.0.1:3000"} // Add your frontend origin
+	config.AllowOrigins = []string{"http://localhost:3000"} // Add your frontend origin
 	config.AllowCredentials = true                          // Important for cookies
 	router.Use(cors.New(config))
 	router.POST("/api/register/getInfo", rapi.GetInfo)
@@ -29,6 +30,10 @@ func startAPI(lapi login.LoginAPI, rapi *register.RegAPI) {
 	router.POST("/api/register/create", rapi.Register)
 	router.POST("/api/login", lapi.Login)
 	router.POST("/api/check", lapi.CheckCookie)
+	router.POST("/api/events/getEvents", eapi.GetEvents)
+	router.POST("/api/events/createEvent", eapi.CreateEvent)
+	router.POST("/api/events/removeEvent", eapi.RemoveEvent)
+	router.POST("/api/events/updateEvent", eapi.UpdateEvent)
 	router.Run("localhost:8000")
 }
 
@@ -59,10 +64,15 @@ func main() {
 	password := "password" + password_salt
 	password_hash, _ := crypto_back.HashPassword(password)
 	loginDB.AddCreds("admin", "0", "a@a", password_salt, password_hash)
+	loginDB.AddCreds("org", "9999", "org@org", password_salt, password_hash)
+	eventDB := events.NewDB(db)
+	eventDB.Init()
+	eventAPI := events.NewEventAPI(&eventDB, &cookie, &accesDB)
 	accesDB.AddRight(1, 2)
+	accesDB.AddRight(2, 1)
 	err = regDB.QueueAppend("pidorok", "2", "b@b", "password", 0)
 	if err != nil {
 		fmt.Print(err.Error())
 	}
-	startAPI(loginAPI, &registerAPI)
+	startAPI(loginAPI, &registerAPI, &eventAPI)
 }
