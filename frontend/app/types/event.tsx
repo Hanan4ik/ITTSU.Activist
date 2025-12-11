@@ -1,22 +1,24 @@
 import React from 'react';
-import { View, ScrollView, Text, Image, StyleSheet, Button, } from 'react-native';
+import { View, ScrollView, Text, Image, StyleSheet, Button, Dimensions } from 'react-native';
 
 const Event = ({ images, description, onRespond, onViewComments, averageRating }) => {
-  
-  const displayedImages = images.slice(0, 5);
-
+  images = images.slice(0, 1); // В будущем придумать, как группировать изображения красиво как в телеге
   return (
     <ScrollView style={styles.container}>
       <View style={styles.imageContainer}>
-        {displayedImages.map((image, index) => (
-          <Image key={index} source={{ uri: image }} style={styles.image} />
+        {
+        images.map((image, index) => ( 
+          
+          <Image key={index} source={{ uri: image }} style={styles.image}/>
         ))}
       </View>
-      <Text style={styles.description}>{description}</Text>
       <Text style={styles.rating}>Рейтинг: {averageRating.toFixed(1)} ★</Text>
+      <Text style={styles.description}>{description}</Text>
+      
       <View style={styles.buttonContainer}>
-        <Button title="Откликнуться" onPress={onRespond} />
-        <Button title="" onPress={onViewComments} />
+        <Button title="Откликнуться" onPress={onRespond} style={styles.rating} />
+        <View style={styles.spacer} />
+        <Button title="Открыть комментарии" onPress={onViewComments} />
       </View>
     </ScrollView>
   );
@@ -25,6 +27,8 @@ const Event = ({ images, description, onRespond, onViewComments, averageRating }
 const styles = StyleSheet.create({
   container: {
     marginTop: 15,
+    marginLeft: '5%',
+    marginRight: '5%',
     padding: 10,
     width: 'auto',
     marginBottom: 15,
@@ -39,31 +43,34 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
-    elevation: 2,
+    
+  },
+   image: {
+    width: '100%',
+    height: (Dimensions.get('screen').height),
+    
+    resizeMode: 'contain'
   },
   imageContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  image: {
-    width: '100%',
-    height: 1000,
-    marginBottom: 5,
-    borderRadius: 5,
+    justifyContent: 'center',
   },
   description: {
     marginVertical: 10,
-    fontSize: 28,
+    fontSize: 29,
   },
   rating: {
     fontSize: 14,
     marginBottom: 10,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
   },
+  spacer: {
+    marginVertical: 10,
+  }
 });
 
 export default Event;
