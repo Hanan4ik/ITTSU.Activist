@@ -1,75 +1,92 @@
-import React from 'react';
-import { View, ScrollView, Text, Image, StyleSheet, Button, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
+import BeautifulButton from './beautifulButton';
+
 
 const Event = ({ images, description, onRespond, onViewComments, averageRating }) => {
-  images = images.slice(0, 1); // В будущем придумать, как группировать изображения красиво как в телеге
+  const [aspectRatio, setAspectRatio] = useState(16 / 9);
+  const displayImage = images[0];
+
+  useEffect(() => {
+    if (displayImage) {
+      // Fetch the actual image dimensions from the URL
+      Image.getSize(displayImage, (width, height) => {
+        setAspectRatio(width / height);
+      }, (error) => {
+        console.warn("Couldn't get image size:", error);
+      });
+    }
+  }, [displayImage]);
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.imageContainer}>
-        {
-        images.map((image, index) => ( 
-          
-          <Image key={index} source={{ uri: image }} style={styles.image}/>
-        ))}
+    <View style={styles.container}>
+      <View style={styles.imageWrapper}>
+        {displayImage && (
+          <Image 
+            source={{ uri: displayImage }} 
+            style={[
+              styles.image, 
+              { aspectRatio: aspectRatio }
+            ]}
+          />
+        )}
       </View>
-      <Text style={styles.rating}>Рейтинг: {averageRating.toFixed(1)} ★</Text>
-      <Text style={styles.description}>{description}</Text>
-      
-      <View style={styles.buttonContainer}>
-        <Button title="Откликнуться" onPress={onRespond} style={styles.rating} />
-        <View style={styles.spacer} />
-        <Button title="Открыть комментарии" onPress={onViewComments} />
+
+      <View style={styles.content}>
+        <Text style={styles.rating}>Рейтинг: {averageRating.toFixed(1)} ★</Text>
+        <Text style={styles.description}>{description}</Text>
+        
+        <View style={styles.buttonContainer}>
+          <BeautifulButton
+            btnProps={{ color: '#007AFF', onPress: onRespond }}
+            btnTextProps={{ color: "#fff", fontSize: 18, text: 'Откликнуться' }}
+          />
+          <BeautifulButton
+            btnProps={{ color: '#007AFF', onPress: onViewComments }}
+            btnTextProps={{ color: "#fff", fontSize: 18, text: 'Открыть комментарии' }}
+          />
+        </View>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     marginTop: 15,
-    marginLeft: '5%',
-    marginRight: '5%',
-    padding: 10,
-    width: 'auto',
-    marginBottom: 15,
+    marginHorizontal: '5%',
     backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "blue",
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    overflow: 'hidden',
+    elevation: 3,
   },
-   image: {
+  imageWrapper: {
     width: '100%',
-    height: (Dimensions.get('screen').height),
-    
-    resizeMode: 'contain'
+    backgroundColor: '#f0f0f0',
   },
-  imageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+  image: {
+    width: '100%',
+    // No fixed height here! The aspectRatio property handles it.
+    resizeMode: 'contain', 
+  },
+  content: {
+    padding: 15,
   },
   description: {
-    marginVertical: 10,
-    fontSize: 29,
+    marginBottom: 15,
+    fontSize: 18,
+    color: '#333',
   },
   rating: {
     fontSize: 14,
-    marginBottom: 10,
+    color: '#666',
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
   buttonContainer: {
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
-  },
-  spacer: {
-    marginVertical: 10,
+    marginTop: 5,
   }
 });
 

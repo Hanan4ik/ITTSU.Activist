@@ -22,10 +22,10 @@ func startAPI(lapi login.LoginAPI, rapi *register.RegAPI, eapi *events.EventAPI,
 	gin.SetMode(gin.DebugMode)
 	router := gin.Default()
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"} // Add your frontend origin
+	config.AllowOrigins = []string{"http://localhost:8081"} // Add your frontend origin
 	config.AllowCredentials = true                          // Important for cookies
 	router.Use(cors.New(config))
-	router.POST("/api/register/getInfo", rapi.GetInfo)
+	router.GET("/api/register/getInfo", rapi.GetInfo)
 	router.POST("/api/register/approve", rapi.Approve)
 	router.POST("/api/register/disapprove", rapi.Disapprove)
 	router.POST("/api/register/create", rapi.Register)
