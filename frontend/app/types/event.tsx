@@ -68,7 +68,6 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    // No fixed height here! The aspectRatio property handles it.
     resizeMode: 'contain', 
   },
   content: {
