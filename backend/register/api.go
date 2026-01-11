@@ -43,7 +43,12 @@ func (rAPI *RegAPI) GetInfo(g *gin.Context) { // /api/register/getInfo
 		g.JSON(http.StatusBadRequest, constants.AuthErr)
 		return
 	}
-	if !rAPI.adb.IsAdmin(res.ID) {
+	admin, err := rAPI.adb.IsAdmin(res.ID)
+	if err != nil {
+		g.JSON(http.StatusInternalServerError, constants.ServerError)
+		return
+	}
+	if !admin {
 		g.JSON(http.StatusBadRequest, constants.AuthErr)
 		return
 	}

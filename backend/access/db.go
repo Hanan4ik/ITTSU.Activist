@@ -2,62 +2,59 @@ package access
 
 import (
 	"activist/constants"
-	"database/sql"
+
+	"gorm.io/gorm"
 )
 
 type AcessDB struct {
-	db *sql.DB
+	gormDB *gorm.DB
 }
 
-func NewAcessDB(db *sql.DB) AcessDB {
-	return AcessDB{db}
+type Right struct {
+	gorm.Model
+	Rights uint `gorm:"not null"` // storing rights of userID
+	UserID uint `gorm:"not null"` // userID
 }
 
-func (adb *AcessDB) InitDB() {
-	scheme := `
-	CREATE TABLE rights(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	rights INTEGER NOT NULL,
-	FOREIGN KEY (id) REFERENCES creds(id)
-	);`
-	adb.db.Exec(scheme)
+func NewAcessDB(db *gorm.DB) AcessDB {
+	return AcessDB{gormDB: db}
 }
 
-func (adb *AcessDB) AddRight(userID, rights int64) {
-	adb.db.Exec("INSERT INTO rights VALUES(?,?)", userID, rights)
+func (adb *AcessDB) InitDB() error {
+	return adb.gormDB.AutoMigrate(&Right{})
 }
 
-func (adb *AcessDB) IsStudent(userID int64) bool {
+func (adb *AcessDB) AddRight(right Right) error {
+	res := adb.gormDB.Create(&right)
+	return res.Error
+}
+
+func (adb *AcessDB) IsStudent(userID uint) (bool, error) {
 	rights, err := adb.GetUserRight(userID)
-	if rights >= constants.STUDENT && err == nil {
-		return true
+	if err == nil && rights.Rights >= constants.STUDENT {
+		return true, nil
 	}
-	return false
+	return false, err
 }
 
-func (adb *AcessDB) IsOrganisator(userID int64) bool {
+func (adb *AcessDB) IsOrganisator(userID uint) (bool, error) {
 	rights, err := adb.GetUserRight(userID)
-	if rights >= constants.ORGANISATOR && err == nil {
-		return true
+	if rights.Rights >= constants.ORGANISATOR && err == nil {
+		return true, nil
 	}
-	return false
+	return false, err
 }
 
-func (adb *AcessDB) IsAdmin(userID int64) bool {
+func (adb *AcessDB) IsAdmin(userID uint) (bool, error) {
 	rights, err := adb.GetUserRight(userID)
-	if rights >= constants.ADMIN && err == nil {
-		return true
+	if rights.Rights >= constants.ADMIN && err == nil {
+		return true, nil
 	}
-	return false
+	return false, err
 }
 
-func (adb *AcessDB) GetUserRight(userID int64) (int64, error) {
-	var rights int64
-	res, err := adb.db.Query("SELECT rights FROM rights WHERE id = ?", userID)
-	if err != nil {
-		return -1, err
-	}
-	res.Next()
-	res.Scan(&rights)
-	return rights, nil
+func (adb *AcessDB) GetUserRight(userID uint) (Right, error) {
+	var rights Right
+	res := adb.gormDB.Where("user_id = ?", userID).Find(&rights)
+	return rights, res.Error
 }

@@ -4,6 +4,7 @@ import (
 	"activist/access"
 	"activist/constants"
 	"activist/cookie"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,45 +17,47 @@ type CommentsAPI struct {
 }
 
 type StructPostID struct {
-	PostID int64 `json:"postID"`
+	PostID uint `json:"postID"`
 }
 
 type StructID struct {
-	ID int64 `json:"id"`
+	ID uint `json:"id"`
 }
 
 func NewCommentsAPI(db *CommentDB, adb *access.AcessDB, cookie *cookie.CookieHandler) CommentsAPI {
 	return CommentsAPI{db, adb, cookie}
 }
 
-func (capi *CommentsAPI) IsStudent(g *gin.Context) int64 { // дописать json
+func (capi *CommentsAPI) IsStudent(g *gin.Context) (uint, error) { // дописать json
 	raw, err := g.Cookie("session")
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	id, err := capi.cookie.ValidateCookie(raw)
 	if err != nil {
-		return 0
+		return 0, err
 	}
-	if capi.adb.IsStudent(id.ID) {
-		return id.ID
+	res, err := capi.adb.IsStudent(id.ID)
+	if err == nil && res {
+		return id.ID, nil
 	}
-	return 0
+	return 0, err
 }
 
-func (capi *CommentsAPI) IsOrg(g *gin.Context) int64 { // дописать json
+func (capi *CommentsAPI) IsOrg(g *gin.Context) (uint, error) { // дописать json
 	raw, err := g.Cookie("session")
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	id, err := capi.cookie.ValidateCookie(raw)
 	if err != nil {
-		return 0
+		return 0, err
 	}
-	if capi.adb.IsOrganisator(id.ID) {
-		return id.ID
+	res, err := capi.adb.IsOrganisator(id.ID)
+	if err == nil && res {
+		return id.ID, nil
 	}
-	return 0
+	return 0, errors.New("NO RESULT")
 }
 
 func (capi *CommentsAPI) HasRights(g *gin.Context, comment Comment) bool {
@@ -66,7 +69,8 @@ func (capi *CommentsAPI) HasRights(g *gin.Context, comment Comment) bool {
 	if err != nil {
 		return false
 	}
-	if (comment.UserID == id.ID) || capi.adb.IsOrganisator(id.ID) {
+	res, err := capi.adb.IsOrganisator(id.ID)
+	if ((comment.UserID == id.ID) || res) && err == nil {
 		return true
 	}
 	return false
@@ -74,9 +78,13 @@ func (capi *CommentsAPI) HasRights(g *gin.Context, comment Comment) bool {
 
 func (capi *CommentsAPI) AddComment(g *gin.Context) {
 	var com Comment
-	res := capi.IsStudent(g)
+	res, err := capi.IsStudent(g)
 	if res == 0 {
 		g.JSON(http.StatusBadRequest, constants.AuthErr)
+		return
+	}
+	if err != nil {
+		g.JSON(http.StatusInternalServerError, constants.ServerError)
 		return
 	}
 	g.BindJSON(&com)
@@ -88,8 +96,8 @@ func (capi *CommentsAPI) AddComment(g *gin.Context) {
 func (capi *CommentsAPI) RemoveComment(g *gin.Context) {
 	var id StructID
 	g.BindJSON(&id)
-	removeComment := capi.db.GetComment(id.ID)
-	if !(capi.HasRights(g, removeComment)) {
+	removeComment, err := capi.db.GetComment(id.ID)
+	if !(capi.HasRights(g, removeComment)) || err != nil {
 		g.JSON(http.StatusBadRequest, constants.AuthErr)
 		return
 	}
@@ -100,6 +108,9 @@ func (capi *CommentsAPI) RemoveComment(g *gin.Context) {
 func (capi *CommentsAPI) GetComments(g *gin.Context) {
 	var postID StructPostID
 	g.BindJSON(&postID)
-	removeComment := capi.db.GetPostComments(postID.PostID)
+	removeComment, err := capi.db.GetPostComments(postID.PostID)
+	if err != nil {
+		g.JSON(http.StatusInternalServerError, constants.ServerError)
+	}
 	g.JSON(http.StatusOK, removeComment)
 }

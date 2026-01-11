@@ -29,7 +29,7 @@ func (lapi LoginAPI) Login(c *gin.Context) { // /api/login endpoint
 	fmt.Println(input)
 	cred := input.Cred
 	password := input.Password
-	var id int64
+	var id uint
 	var err error
 	fmt.Println(cred)
 	if isEmail(cred) {

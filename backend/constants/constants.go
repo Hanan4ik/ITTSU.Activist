@@ -3,9 +3,9 @@ package constants
 import "github.com/gin-gonic/gin"
 
 var (
-	STUDENT     int64 = 0
-	ORGANISATOR int64 = 1
-	ADMIN       int64 = 2
+	STUDENT     uint = 0
+	ORGANISATOR uint = 1
+	ADMIN       uint = 2
 )
 
 var (

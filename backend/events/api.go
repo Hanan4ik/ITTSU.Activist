@@ -40,8 +40,13 @@ func (eapi *EventAPI) IsOrg(g *gin.Context) bool {
 		return false
 	}
 	id := res.ID
-	if !eapi.adb.IsOrganisator(id) {
+	smth, err := eapi.adb.IsOrganisator(id)
+	if !smth {
 		g.JSON(http.StatusBadRequest, constants.AuthErr)
+		return false
+	}
+	if err != nil {
+		g.JSON(http.StatusInternalServerError, constants.ServerError)
 		return false
 	}
 	return true

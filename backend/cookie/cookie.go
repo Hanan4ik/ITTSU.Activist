@@ -13,12 +13,12 @@ type CookieHandler struct {
 }
 
 type Session struct {
-	ID     int64 // id of user
+	ID     uint  // id of user
 	Expiry int64 // date of cookie expiry
 }
 
 // Generate new cookie with userID and expiry date of 1 week
-func (cookie *CookieHandler) GenerateCookie(userID int64) (string, error) {
+func (cookie *CookieHandler) GenerateCookie(userID uint) (string, error) {
 	s := Session{userID, time.Now().Add(7 * 24 * time.Hour).Unix()}
 	encoded, err := cookie.Worker.Encode("session", s)
 	return encoded, err

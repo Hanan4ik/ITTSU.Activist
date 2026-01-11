@@ -17,7 +17,7 @@ type RegisterDB struct {
 type Row struct {
 	ID          int64  `json:"id"`
 	Username    string `json:"username"`
-	TableNumber string `json:"tableNumber"`
+	TableNumber uint   `json:"tableNumber"`
 	Email       string `json:"email"`
 	Rights      int64  `json:"rights"`
 }
@@ -79,11 +79,13 @@ func (rdb *RegisterDB) Approve(id int64) error {
 		return err
 	}
 	row := res[0]
-	userID, err := rdb.ldb.AddCreds(row.Row.Username, row.Row.TableNumber, row.Row.Email, row.PasswordSalt, row.PasswordHash)
+	record := login.LoginRecord{Username: row.Row.Username, TabelNumber: row.Row.TableNumber, Email: row.Row.Email, PasswordSalt: row.PasswordSalt, PasswordHash: row.PasswordHash}
+	userID, err := rdb.ldb.AddCreds(&record)
 	if err != nil {
 		return err
 	}
-	rdb.adb.AddRight(userID, row.Row.Rights)
+	rights := access.Right{UserID: userID, Rights: uint(row.Row.Rights)}
+	rdb.adb.AddRight(rights)
 	rdb.ChangeApproveValue(id, 1)
 	return nil
 }

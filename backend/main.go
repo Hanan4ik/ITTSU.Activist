@@ -14,8 +14,10 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/tursodatabase/turso-go"
+	"gorm.io/gorm"
 )
 
 func startAPI(lapi login.LoginAPI, rapi *register.RegAPI, eapi *events.EventAPI, capi *comments.CommentsAPI) {
@@ -23,6 +25,7 @@ func startAPI(lapi login.LoginAPI, rapi *register.RegAPI, eapi *events.EventAPI,
 	router := gin.Default()
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"} // Add your frontend origin
+	config.AllowOrigins = []string{"http://localhost:8081"} // Add your frontend origin
 	config.AllowCredentials = true                          // Important for cookies
 	router.Use(cors.New(config))
 	router.POST("/api/register/getInfo", rapi.GetInfo)
@@ -48,7 +51,6 @@ func randomBytes(n int) []byte {
 }
 
 func main() {
-	db, err := sql.Open("turso", "db.sqlite")
 	regDb, err := sql.Open("turso", "rdb.sqlite")
 	if err != nil {
 		fmt.Print(err.Error())
@@ -56,6 +58,10 @@ func main() {
 	hashKey := randomBytes(64)
 	blockKey := randomBytes(32)
 	cookie := cookie.NewHandler(hashKey, blockKey)
+	db, err := gorm.Open(sqlite.Open("access.sqlite"), &gorm.Config{})
+	if err != nil {
+		fmt.Print(err.Error())
+	}
 	accesDB := access.NewAcessDB(db)
 	accesDB.InitDB()
 	loginDB := login.LoginDB{db}
@@ -67,15 +73,21 @@ func main() {
 	password_salt := "1234"
 	password := "password" + password_salt
 	password_hash, _ := crypto_back.HashPassword(password)
-	loginDB.AddCreds("admin", "0", "a@a", password_salt, password_hash)
-	loginDB.AddCreds("org", "9999", "org@org", password_salt, password_hash)
-	eventDB := events.NewDB(db)
+	record := login.LoginRecord{Username: "admin", TabelNumber: 0, Email: "a@a", PasswordSalt: password_salt, PasswordHash: password_hash}
+	loginDB.AddCreds(&record)
+	edb, err := sql.Open("sqlite", "events.sqlite")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	eventDB := events.NewDB(edb)
 	eventDB.Init()
 	eventAPI := events.NewEventAPI(&eventDB, &cookie, &accesDB)
-	accesDB.AddRight(1, 2)
-	accesDB.AddRight(2, 1)
+	right := access.Right{Rights: 1, UserID: 2}
+	accesDB.AddRight(right)
+	accesDB.AddRight(right)
 	err = regDB.QueueAppend("pidorok", "2", "b@b", "password", 0)
-	cdb, _ := comments.NewCommentDB("comments.sqlite")
+	comDB, _ := gorm.Open(sqlite.Open("comments.db"), &gorm.Config{})
+	cdb := comments.NewCommentDB(comDB)
 	cdb.Init()
 	cdb.NewComment(comments.Comment{Text: "Privet mir", PostID: 3, UserID: 1})
 	cdb.NewComment(comments.Comment{Text: "Privet mir", PostID: 3, UserID: 1})

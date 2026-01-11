@@ -1,59 +1,51 @@
 package comments
 
 import (
-	"fmt"
-
-	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
 type Comment struct {
 	gorm.Model
 	Text   string `gorm:"not null"`
-	PostID int64  `gorm:"not null"`
-	UserID int64  `gorn:"not null"`
+	PostID uint   `gorm:"not null"`
+	UserID uint   `gorn:"not null"`
 }
 
 type CommentDB struct {
 	gorm *gorm.DB
 }
 
-func NewCommentDB(dbPath string) (CommentDB, error) {
-	var res CommentDB
-	gdb, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
-	if err != nil {
-		return res, err
-	}
-	res = CommentDB{gdb}
-	return res, nil
+func NewCommentDB(gdm *gorm.DB) CommentDB {
+	return CommentDB{gorm: gdm}
 }
 
-func (cmd *CommentDB) Init() {
-	cmd.gorm.AutoMigrate(&Comment{})
+func (cmd *CommentDB) Init() error {
+	return cmd.gorm.AutoMigrate(&Comment{})
 }
 
-func (cmd *CommentDB) NewComment(comment Comment) {
-	cmd.gorm.Create(&comment)
+func (cmd *CommentDB) NewComment(comment Comment) error {
+	res := cmd.gorm.Create(&comment)
+	return res.Error
 }
 
-func (cmd *CommentDB) GetComment(id int64) Comment {
+func (cmd *CommentDB) GetComment(id uint) (Comment, error) {
 	var name Comment
-	cmd.gorm.Where("id = ?", id).Find(&Comment{}).Scan(&name)
-	return name
+	res := cmd.gorm.Where("id = ?", id).Find(&Comment{}).Scan(&name)
+	return name, res.Error
 }
 
-func (cmd *CommentDB) GetPostComments(id int64) []Comment {
+func (cmd *CommentDB) GetPostComments(id uint) ([]Comment, error) {
 	var comments []Comment
-	cmd.gorm.Where("post_id = ?", id).Find(&comments)
-	fmt.Println(comments)
-	return comments
+	res := cmd.gorm.Where("post_id = ?", id).Find(&comments)
+	return comments, res.Error
 }
 
-func (cmd *CommentDB) UpdateComment(id int64, comment Comment) {
-	cmd.gorm.Where("id = ?", id).Updates(&comment)
+func (cmd *CommentDB) UpdateComment(id uint, comment Comment) error {
+	res := cmd.gorm.Where("id = ?", id).Updates(&comment)
+	return res.Error
 }
 
-func (cmd *CommentDB) RemoveComment(id int64) {
-	fmt.Println(id)
-	cmd.gorm.Delete(&Comment{}, id)
+func (cmd *CommentDB) RemoveComment(id uint) error {
+	res := cmd.gorm.Delete(&Comment{}, id)
+	return res.Error
 }
